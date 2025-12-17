@@ -1,8 +1,6 @@
 from fastapi import FastAPI
+from app.routers import health
 
 app = FastAPI(title="Explorador de Bases de Datos")
 
-@app.get("/")
-def read_root():
-    return {"message":"API funcionando correctamente"}
-
+app.include_router(health.router)
