@@ -20,19 +20,30 @@ def get_tables():
 def get_columns(table_name: str):
     conn = get_connection()
     cur = conn.cursor(dictionary=True)
-    query = """
-            SELECT
-                column_name,
-                data_type,
-                is_nullable,
-                column_key
-            FROM information_schema.columns
-            WHERE table_schema = DATABASE()
-            AND table_name = %s
 
-            """
+    query = """
+        SELECT
+            COLUMN_NAME,
+            DATA_TYPE,
+            IS_NULLABLE,
+            COLUMN_KEY
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+        AND table_name = %s
+    """
+
     cur.execute(query, (table_name,))
-    columns = cur.fetchall()
+    result = cur.fetchall()
+
+    columns = []
+    for row in result:
+        columns.append({
+            "column_name": row["COLUMN_NAME"],
+            "data_type": row["DATA_TYPE"],
+            "is_nullable": row["IS_NULLABLE"],
+            "column_key": row["COLUMN_KEY"]
+        })
+
     cur.close()
     conn.close()
     return columns
