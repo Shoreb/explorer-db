@@ -13,8 +13,8 @@ app.include_router(db_test.router)
 app.include_router(metadata.router)
 app.include_router(metadata_dynamic.router)
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+templates = Jinja2Templates(directory="frontend/templates")
 
 @app.get("/")
 def home(request: Request):
