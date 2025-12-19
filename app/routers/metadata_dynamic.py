@@ -1,24 +1,25 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas import MySQLConnectionData
-from app.services.metadata_dynamic_service import (
-    get_tables_dynamic, 
-    get_columns_dynamic
-)
+from app.schemas.connection import DBConnectionSchema
+from app.services.metadata_service import get_columns_dynamic
 
-router = APIRouter(prefix="/dynamic", tags=["Dynamic Connection"])
+router = APIRouter(prefix="/metadata/dynamic", tags=["Metadata Dynamic"])
 
-@router.post("/tables")
-def list_tables_dynamic(data: MySQLConnectionData):
+
+@router.post("/tables/{table_name}/columns")
+def list_columns_dynamic(
+    table_name: str,
+    conn: DBConnectionSchema
+):
     try:
-        tables = get_tables_dynamic(data)
-        return {"tables":tables}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
-@router.post("/columns")
-def list_columns_dynamic(table_name: str, data: MySQLConnectionData):
-    try:
-        columns = get_columns_dynamic(data, table_name)
-        return {"table": table_name, "columns": columns}
+        columns = get_columns_dynamic(
+            conn.user,
+            conn.password,
+            conn.host,
+            conn.port,
+            conn.database,
+            table_name
+        )
+        return {"columns": columns}
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
