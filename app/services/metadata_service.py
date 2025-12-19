@@ -1,49 +1,60 @@
-from app.db.mysql import get_connection
+import pymysql
 
-#Funcion 1 -> retorna la lista de nombres de tablas
+#Conexion fija
+def get_connection():
+    return pymysql.connect(
+        host="localhost",
+        user="root",
+        password="TU_PASSWORD",
+        database="TU_DATABASE",
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
 def get_tables():
-    conn = get_connection()
-    cur = conn.cursor()
-    query = """
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = DATABASE()
+    connection = get_connection()
+    with connection.cursor() as cursor:
+        cursor.execute("SHOW TABLES")
+        result = cursor.fetchall()
+    connection.close()
+    return result
 
-            """
-    cur.execute(query)
-    tables = [row[0] for row in cur.fetchall()]
-    cur.close()
-    conn.close()
-    return tables
 
-#Funcion 2 -> retorna informacion detallada de las columnas de una tabla especifica
 def get_columns(table_name: str):
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
+    connection = get_connection()
+    with connection.cursor() as cursor:
+        cursor.execute(f"DESCRIBE {table_name}")
+        result = cursor.fetchall()
+    connection.close()
+    return result
 
-    query = """
-        SELECT
-            COLUMN_NAME,
-            DATA_TYPE,
-            IS_NULLABLE,
-            COLUMN_KEY
-        FROM information_schema.columns
-        WHERE table_schema = DATABASE()
-        AND table_name = %s
-    """
 
-    cur.execute(query, (table_name,))
-    result = cur.fetchall()
+def get_columns_dynamic(user, password, host, port, database, table):
+    try:
+        connection = pymysql.connect(
+            host=host,
+            user=user,
+            password=password,
+            database=database,
+            port=port,
+            cursorclass=pymysql.cursors.DictCursor
+        )
 
-    columns = []
-    for row in result:
-        columns.append({
-            "column_name": row["COLUMN_NAME"],
-            "data_type": row["DATA_TYPE"],
-            "is_nullable": row["IS_NULLABLE"],
-            "column_key": row["COLUMN_KEY"]
-        })
+        with connection.cursor() as cursor:
+            query = """
+            SELECT COLUMN_NAME, DATA_TYPE
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = %s
+            AND TABLE_NAME = %s
+            """
+            cursor.execute(query, (database, table))
+            result = cursor.fetchall()
 
-    cur.close()
-    conn.close()
-    return columns
+        connection.close()
+
+        if not result:
+            raise Exception("La tabla no existe o no tiene columnas")
+
+        return result
+
+    except pymysql.err.OperationalError as e:
+        raise Exception("Error de conexión con MySQL")
