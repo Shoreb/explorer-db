@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Explorador de Bases de Datos</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Explorador de Bases de Datos</h1>
+
+    <form id="connection-form">
+        <h3>Conexión MySQL</h3>
+
+        <input type="text" id="host" placeholder="Host" value="localhost" required>
+        <input type="number" id="port" placeholder="Puerto" value="3306" required>
+        <input type="text" id="user" placeholder="Usuario" required>
+        <input type="password" id="password" placeholder="Contraseña">
+        <input type="text" id="database" placeholder="Base de datos" required>
+
+        <button type="submit">Conectar</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

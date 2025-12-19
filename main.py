@@ -1,4 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+#
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from app.routers import health, db_test, metadata, metadata_dynamic
@@ -10,8 +13,12 @@ app.include_router(db_test.router)
 app.include_router(metadata.router)
 app.include_router(metadata_dynamic.router)
 
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory="app/templates")
 
+@app.get("/")
+def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
