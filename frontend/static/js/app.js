@@ -54,47 +54,56 @@ function renderTables(tables) {
     li.onclick = () => loadColumns(table);
     tablesList.appendChild(li);
   });
+
+  li.onclick = () => {
+  document.querySelectorAll("#tables-list li")
+    .forEach(el => el.classList.remove("active"));
+
+  li.classList.add("active");
+  loadColumns(table);
+};
+
 }
 
 
 //Funcion para cargar columnas
 async function loadColumns(tableName) {
-    resultDiv.innerHTML += `<h4>Columnas de ${tableName}</h4>`;
+  const columnsTable = document.getElementById("columns-table");
+  columnsTable.innerHTML = "";
 
-    try {
-        const response = await fetch(
-            `/metadata/dynamic/tables/${tableName}/columns`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(connectionData)
-            }
-        );
+  try {
+    const response = await fetch(
+      `http://localhost:8000/metadata/dynamic/tables/${tableName}/columns`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(connectionData)
+      }
+    );
 
-        const result = await response.json();
+    if (!response.ok) throw new Error();
 
-            // ✅ conexión exitosa
-        connectionSection.hidden = true;
-        explorerSection.hidden = false;
+    const data = await response.json();
 
+    // conexión exitosa
+    connectionSection.hidden = true;
+    explorerSection.hidden = false;
 
-        if (!response.ok) {
-            throw new Error(result.detail || "Error al cargar columnas");
-        }
+    data.columns.forEach(col => {
+      const tr = document.createElement("tr");
 
-        const ul = document.createElement("ul");
+      tr.innerHTML = `
+        <td>${col.column_name}</td>
+        <td>${col.data_type}</td>
+        <td>${col.is_nullable}</td>
+        <td>${col.column_key || ""}</td>
+      `;
 
-        result.columns.forEach(col => {
-            const li = document.createElement("li");
-            li.textContent = `${col.COLUMN_NAME} (${col.DATA_TYPE})`;
-            ul.appendChild(li);
-        });
+      columnsTable.appendChild(tr);
+    });
 
-        resultDiv.appendChild(ul);
-
-    } catch (error) {
-        resultDiv.innerHTML += `<p style="color:red">${error.message}</p>`;
-    }
+  } catch (error) {
+    columnsTable.innerHTML =
+      "<tr><td colspan='4'>Error loading columns</td></tr>";
+  }
 }
