@@ -1,54 +1,100 @@
-const loadTablesBtn = document.getElementById("loadTablesBtn");
-const tablesList = document.getElementById("tablesList");
-const columnsTableBody = document.querySelector("#columnsTable tbody");
+const connectionSection = document.getElementById("connection-section");
+const explorerSection = document.getElementById("explorer-section");
+const connectionForm = document.getElementById("connection-form");
+const errorText = document.getElementById("connection-error");
+const tablesList = document.getElementById("tables-list");
 
-loadTablesBtn.addEventListener("click", loadTables);
+let connectionData = null;
 
-async function loadTables() {
-    tablesList.innerHTML = "";
-    columnsTableBody.innerHTML = "";
+//Enviar form y conectar
+connectionForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorText.textContent = "";
 
-    try {
-        const response = await fetch("/metadata/tables");
-        const data = await response.json();
+  connectionData = {
+    host: host.value,
+    port: Number(port.value),
+    user: user.value,
+    password: password.value,
+    database: database.value
+  };
 
-         console.log(data.columns);
+  try {
+    const response = await fetch(
+      "http://localhost:8000/metadata/dynamic/tables",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(connectionData)
+      }
+    );
 
-        data.tables.forEach(table => {
-            const li = document.createElement("li");
-            li.textContent = table;
+    if (!response.ok) throw new Error();
 
-            li.addEventListener("click", () => {
-                loadColumns(table);
-            });
+    const data = await response.json();
 
-            tablesList.appendChild(li);
-        });
-    } catch (error) {
-        console.error("Error cargando tablas:", error);
-    }
+    // 👉 AQUÍ va el cambio de sección
+    connectionSection.hidden = true;
+    explorerSection.hidden = false;
+
+    renderTables(data.tables);
+
+  } catch {
+    errorText.textContent = "Connection failed";
+  }
+});
+
+
+function renderTables(tables) {
+  tablesList.innerHTML = "";
+
+  tables.forEach(table => {
+    const li = document.createElement("li");
+    li.textContent = table;
+    li.onclick = () => loadColumns(table);
+    tablesList.appendChild(li);
+  });
 }
 
+
+//Funcion para cargar columnas
 async function loadColumns(tableName) {
-    columnsTableBody.innerHTML = "";
+    resultDiv.innerHTML += `<h4>Columnas de ${tableName}</h4>`;
 
     try {
-        const response = await fetch(`/metadata/tables/${tableName}/columns`);
-        const data = await response.json();
+        const response = await fetch(
+            `/metadata/dynamic/tables/${tableName}/columns`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(connectionData)
+            }
+        );
 
-        data.columns.forEach(col => {
-            const tr = document.createElement("tr");
+        const result = await response.json();
 
-            tr.innerHTML = `
-                <td>${col.column_name}</td>
-                <td>${col.data_type}</td>
-                <td>${col.is_nullable}</td>
-                <td>${col.column_key || ""}</td>
-            `;
+            // ✅ conexión exitosa
+        connectionSection.hidden = true;
+        explorerSection.hidden = false;
 
-            columnsTableBody.appendChild(tr);
+
+        if (!response.ok) {
+            throw new Error(result.detail || "Error al cargar columnas");
+        }
+
+        const ul = document.createElement("ul");
+
+        result.columns.forEach(col => {
+            const li = document.createElement("li");
+            li.textContent = `${col.COLUMN_NAME} (${col.DATA_TYPE})`;
+            ul.appendChild(li);
         });
+
+        resultDiv.appendChild(ul);
+
     } catch (error) {
-        console.error("Error cargando columnas:", error);
+        resultDiv.innerHTML += `<p style="color:red">${error.message}</p>`;
     }
 }
