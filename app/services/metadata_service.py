@@ -28,6 +28,28 @@ def get_columns(table_name: str):
     return result
 
 
+def get_tables_dynamic(user, password, host, port, database):
+    try:
+        connection = pymysql.connect(
+            host=host,
+            user=user,
+            password=password,
+            database=database,
+            port=port,
+            cursorclass=pymysql.cursors.DictCursor
+        )
+
+        with connection.cursor() as cursor:
+            cursor.execute("SHOW TABLES")
+            result = cursor.fetchall()
+
+        connection.close()
+        return result
+
+    except pymysql.err.OperationalError:
+        raise Exception("Error de conexión con MySQL")
+
+
 def get_columns_dynamic(user, password, host, port, database, table):
     try:
         connection = pymysql.connect(
