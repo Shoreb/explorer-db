@@ -1,52 +1,45 @@
 body {
-    font-family: Arial, sans-serif;
-    margin: 40px;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #eee;
+  margin: 0;
+  padding: 20px;
 }
 
-h1 {
-    color: #2c3e50;
+section {
+  margin-bottom: 40px;
 }
 
-button {
-    padding: 10px 15px;
-    cursor: pointer;
-    margin-bottom: 20px;
+form input, button {
+  display: block;
+  margin: 10px 0;
+  padding: 8px;
 }
 
-.container {
-    display: flex;
-    gap: 40px;
+.error {
+  color: red;
 }
 
-.tables, .columns {
-    width: 50%;
+#explorer-section {
+  display: flex;
+  gap: 40px;
 }
 
-ul {
-    list-style: none;
-    padding: 0;
+.tables ul {
+  list-style: none;
+  padding: 0;
 }
 
-li {
-    padding: 6px;
-    cursor: pointer;
-}
-
-li:hover {
-    background-color: #f0f0f0;
+.tables li {
+  cursor: pointer;
+  padding: 6px;
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
+  border-collapse: collapse;
 }
 
 th, td {
-    border: 1px solid #ccc;
-    padding: 6px;
-    text-align: left;
-}
-
-th {
-    background-color: #eee;
+  border: 1px solid #888;
+  padding: 6px;
 }
