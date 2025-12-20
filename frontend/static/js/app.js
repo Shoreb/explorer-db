@@ -1,12 +1,16 @@
+// ====== REFERENCIAS DOM ======
 const connectionSection = document.getElementById("connection-section");
 const explorerSection = document.getElementById("explorer-section");
 const connectionForm = document.getElementById("connection-form");
 const errorText = document.getElementById("connection-error");
-const tablesList = document.getElementById("tables-list");
 
+const tablesList = document.getElementById("tables-list");
+const columnsBody = document.getElementById("columns-body");
+
+// ====== ESTADO GLOBAL ======
 let connectionData = null;
 
-//Enviar form y conectar
+// ====== CONEXIÓN ======
 connectionForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorText.textContent = "";
@@ -20,60 +24,72 @@ connectionForm.addEventListener("submit", async (e) => {
   };
 
   try {
-    const response = await fetch(
-      "http://localhost:8000/metadata/dynamic/tables",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(connectionData)
-      }
-    );
+    const response = await fetch("/metadata/dynamic/tables", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(connectionData)
+    });
 
-    if (!response.ok) throw new Error();
+    if (!response.ok) {
+      throw new Error("Connection failed");
+    }
 
     const data = await response.json();
 
-    // 👉 AQUÍ va el cambio de sección
+    // Cambiar sección
     connectionSection.hidden = true;
     explorerSection.hidden = false;
 
+    // Renderizar tablas directamente
     renderTables(data.tables);
 
-  } catch {
+  } catch (error) {
     errorText.textContent = "Connection failed";
   }
 });
 
-
+// ====== RENDER TABLAS ======
 function renderTables(tables) {
   tablesList.innerHTML = "";
 
-  tables.forEach(table => {
+  if (!tables || tables.length === 0) {
+    tablesList.innerHTML = "<li>No tables found</li>";
+    return;
+  }
+
+  tables.forEach((item) => {
+    const tableName = item.table_name;
+
     const li = document.createElement("li");
-    li.textContent = table;
-    li.onclick = () => loadColumns(table);
+    li.textContent = tableName;
+    li.classList.add("table-item");
+
+    li.addEventListener("click", () => {
+      // UX: marcar tabla activa
+      document
+        .querySelectorAll("#tables-list li")
+        .forEach(el => el.classList.remove("active"));
+
+      li.classList.add("active");
+
+      loadColumns(tableName);
+    });
+
     tablesList.appendChild(li);
   });
-
-  li.onclick = () => {
-  document.querySelectorAll("#tables-list li")
-    .forEach(el => el.classList.remove("active"));
-
-  li.classList.add("active");
-  loadColumns(table);
-};
-
 }
 
-
-//Funcion para cargar columnas
+// ====== CARGAR COLUMNAS DINÁMICAS ======
 async function loadColumns(tableName) {
-  const columnsTable = document.getElementById("columns-table");
-  columnsTable.innerHTML = "";
+  columnsBody.innerHTML = `
+    <tr>
+      <td colspan="4">Loading columns...</td>
+    </tr>
+  `;
 
   try {
     const response = await fetch(
-      `http://localhost:8000/metadata/dynamic/tables/${tableName}/columns`,
+      `/metadata/dynamic/tables/${tableName}/columns`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,13 +97,12 @@ async function loadColumns(tableName) {
       }
     );
 
-    if (!response.ok) throw new Error();
+    if (!response.ok) {
+      throw new Error("Error loading columns");
+    }
 
     const data = await response.json();
-
-    // conexión exitosa
-    connectionSection.hidden = true;
-    explorerSection.hidden = false;
+    columnsBody.innerHTML = "";
 
     data.columns.forEach(col => {
       const tr = document.createElement("tr");
@@ -96,14 +111,17 @@ async function loadColumns(tableName) {
         <td>${col.column_name}</td>
         <td>${col.data_type}</td>
         <td>${col.is_nullable}</td>
-        <td>${col.column_key || ""}</td>
+        <td>${col.column_key || "-"}</td>
       `;
 
-      columnsTable.appendChild(tr);
+      columnsBody.appendChild(tr);
     });
 
   } catch (error) {
-    columnsTable.innerHTML =
-      "<tr><td colspan='4'>Error loading columns</td></tr>";
+    columnsBody.innerHTML = `
+      <tr>
+        <td colspan="4">Error loading columns</td>
+      </tr>
+    `;
   }
 }
