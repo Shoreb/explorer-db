@@ -29,54 +29,51 @@ def get_columns(table_name: str):
 
 
 def get_tables_dynamic(user, password, host, port, database):
-    try:
-        connection = pymysql.connect(
-            host=host,
-            user=user,
-            password=password,
-            database=database,
-            port=port,
-            cursorclass=pymysql.cursors.DictCursor
-        )
+    connection = pymysql.connect(
+        host=host,
+        user=user,
+        password=password,
+        database=database,
+        port=port
+    )
 
+    try:
         with connection.cursor() as cursor:
             cursor.execute("SHOW TABLES")
             result = cursor.fetchall()
 
+            # convertir a lista de strings
+            tables = [row[0] for row in result]
+            return tables
+
+    finally:
         connection.close()
-        return result
 
-    except pymysql.err.OperationalError:
-        raise Exception("Error de conexión con MySQL")
+def get_columns_dynamic(user, password, host, port, database, table_name):
+    connection = pymysql.connect(
+        host=host,
+        user=user,
+        password=password,
+        database=database,
+        port=port
+    )
 
-
-def get_columns_dynamic(user, password, host, port, database, table):
     try:
-        connection = pymysql.connect(
-            host=host,
-            user=user,
-            password=password,
-            database=database,
-            port=port,
-            cursorclass=pymysql.cursors.DictCursor
-        )
-
         with connection.cursor() as cursor:
-            query = """
-            SELECT COLUMN_NAME, DATA_TYPE
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = %s
-            AND TABLE_NAME = %s
-            """
-            cursor.execute(query, (database, table))
+            cursor.execute(f"DESCRIBE `{table_name}`")
             result = cursor.fetchall()
 
+            columns = []
+            for row in result:
+                columns.append({
+                    "name": row[0],       # Field
+                    "type": row[1],       # Type
+                    "nullable": row[2],   # Null
+                    "key": row[3]         # Key
+                })
+
+            return columns
+
+    finally:
         connection.close()
 
-        if not result:
-            raise Exception("La tabla no existe o no tiene columnas")
-
-        return result
-
-    except pymysql.err.OperationalError as e:
-        raise Exception("Error de conexión con MySQL")
